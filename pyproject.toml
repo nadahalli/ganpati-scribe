@@ -1,0 +1,19 @@
+[project]
+name = "meeting-scribe"
+version = "0.1.0"
+description = "Local multilingual meeting transcription with speaker diarization"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "mlx-whisper>=0.4",
+    "pyannote.audio>=3.1",
+    "anthropic>=0.40",
+    "click>=8.0",
+    "rich>=13.0",
+]
+
+[project.scripts]
+meeting-scribe = "meeting_scribe.cli:main"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
