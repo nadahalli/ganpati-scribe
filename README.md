@@ -2,15 +2,16 @@
 
 Local multilingual meeting transcription with speaker diarization and English translation.
 
-Built for transcribing meetings with mixed languages (Swiss German, German, English, French). Heavy compute runs locally on Apple Silicon, Claude API handles translation only.
+Built for transcribing meetings with mixed languages (Swiss German, German, English, French). Heavy compute runs locally, Claude API handles translation only.
 
 ## Pipeline
 
 ```
 audio file
    |
-   +---> mlx-whisper (Metal GPU)      --> timestamped text segments
-   |     whisper-large-v3-turbo
+   +---> Whisper large-v3-turbo        --> timestamped text segments
+   |     mlx-whisper (macOS Metal GPU)
+   |     faster-whisper (Linux CPU)
    |
    +---> pyannote.audio (CPU)          --> speaker timeline
    |     speaker-diarization-3.1
@@ -28,18 +29,27 @@ Steps 1 and 2 run in parallel.
 
 **Prerequisites:**
 - Python 3.12
-- ffmpeg (`brew install ffmpeg`)
+- ffmpeg
 - [HuggingFace token](https://hf.co/settings/tokens) with access to these gated models:
   - [pyannote/speaker-diarization-3.1](https://huggingface.co/pyannote/speaker-diarization-3.1)
   - [pyannote/segmentation-3.0](https://huggingface.co/pyannote/segmentation-3.0)
   - [pyannote/speaker-diarization-community-1](https://huggingface.co/pyannote/speaker-diarization-community-1)
 - [Anthropic API key](https://console.anthropic.com) (for translation)
 
-**Install:**
+**Install (macOS, Apple Silicon):**
 ```bash
+brew install ffmpeg
 python3.12 -m venv .venv
 source .venv/bin/activate
-pip install -e .
+pip install -e ".[mac]"
+```
+
+**Install (Linux):**
+```bash
+sudo apt install ffmpeg    # or: dnf install ffmpeg
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[linux]"
 ```
 
 **Environment variables:**
@@ -58,8 +68,13 @@ meeting-scribe meeting.mp4 --skip-translation  # raw multilingual transcript (10
 meeting-scribe meeting.mp4 --no-diarization    # skip speaker labels
 ```
 
-## Performance (M4 Max, 48GB)
+## Performance
 
-For a 1-hour recording, expect ~5-8 minutes total (whisper and diarization run in parallel).
+| Platform | 1-hour recording |
+|----------|-----------------|
+| M4 Max (48GB) | ~5-8 min |
+| AMD Ryzen 8-core (98GB) | ~10-20 min (CPU-bound whisper) |
+
+Whisper and diarization run in parallel, so wall clock is max(whisper, pyannote) + merge + translate.
 
 `--skip-translation` runs entirely offline with no API calls.
